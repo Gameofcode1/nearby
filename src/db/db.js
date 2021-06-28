@@ -1,7 +1,7 @@
 const mongoose=require('mongoose')
 
 
-mongoose.connect('mongodb://127.0.0.1:27017/nearby', {
+mongoose.connect(process.env.MONGOB_URL, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useFindAndModify: false,
