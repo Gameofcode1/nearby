@@ -5,17 +5,10 @@ const jswt =require('jsonwebtoken')
 
 
 const UserSchema = mongoose.Schema({
-    name: {
-        type: String,
-        maxlength: 20,
-        minlength: 5,
-        required: true,
-        trim: true,
-    },
-    phonenumber: {
+      number: {
         type: Number,
         maxlength: 10,
-        minlength: 10,
+        minlength: 9,
         required: true,
 
     },
@@ -43,6 +36,18 @@ const UserSchema = mongoose.Schema({
         }
 
     },
+    passwordagain: {
+        type: String,
+        required: true,
+        minlength: 7,
+        trim: true,
+        validate(value) {
+            if (value.toLowerCase().includes('password')) {
+                throw new Error('Password cannot contain "password"')
+            }
+        }
+
+    },
     tokens:[{
         token:{
             type:String,
@@ -57,6 +62,7 @@ UserSchema.methods.toJSON =function(){
     const userObject=user.toObject()
     delete userObject.password
     delete userObject.tokens
+    delete userObject.passwordagain
     return userObject
 
 }
@@ -67,6 +73,16 @@ UserSchema.methods.generateAuthToken=async function(){
     user.tokens=user.tokens.concat({token});
     await user.save();
     return token;
+}
+
+UserSchema.methods.check=async function(){
+    const user=this
+    if (user.isModified('passwordagain')) {
+       if(user.password==user.passwordagain){
+           return user
+       }
+    }
+    throw new Error("error ")
 }
 
 UserSchema.statics.findByCredentials =async (email,password)=>{
@@ -90,6 +106,10 @@ UserSchema.pre('save', async function (next) {
 
     if (user.isModified('password')) {
         user.password = await bycrypt.hash(user.password, 8)
+
+    }
+    if (user.isModified('passwordagain')) {
+        user.passwordagain = await bycrypt.hash(user.passwordagain, 8)
 
     }
     next()
